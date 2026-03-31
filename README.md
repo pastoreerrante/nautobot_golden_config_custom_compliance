@@ -50,6 +50,14 @@ where `custom_compliance` is a folder/package on the same level of the main naut
 
 ```
 
+The custom compliance function will be run on a specific compliance rule only if 
+
+1. `Custom Compliance` field in the rule is set to true
+2. the compliance rule name (`feature` field) must match this value:
+`obj.rule.feature.name == "interfaces":`
+
+![sample compliance rule](https://github.com/pastoreerrante/nautobot_golden_config_custom_compliance/blob/main/custom_config_compliance.png?raw=true)
+
 ## How does compliance works?
 
 compliance jobs in golden config app is implemented as a nornir task in 
