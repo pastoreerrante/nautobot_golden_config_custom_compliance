@@ -1,4 +1,4 @@
-# nautobot_golden_config_custom_compliance
+# Nautobot Golden Config Custom Compliance
 
 custom_compliance implementation for nautobot golden config
 
@@ -33,9 +33,7 @@ PLUGINS_CONFIG = {
     }
 }
 
-where:
-
-custom_compliance is a folder/package on the same level of the main nautobot folder.
+where `custom_compliance` is a folder/package on the same level of the main nautobot folder.
 .
 └── nautobot
     ├── custom_compliance
@@ -54,7 +52,10 @@ custom_compliance is a folder/package on the same level of the main nautobot fol
 
 ## How does compliance works?
 
-nornir compliance `run_compliance`
+compliance jobs in golden config app is implemented as a nornir task in 
+nautobot_golden_config/nornir_plays/config_compliance.py
+
+the python function is called `run_compliance(...)`
 
 this is the heart of the job:
 
@@ -64,9 +65,8 @@ intended_cfg = _open_file_config(intended_file)
 
 # here we are looping over plugins/golden-config/compliance-rule/
 for rule in rules[obj.platform.network_driver]:
-  # for CLI config the subset of the config is really given by netutils
-  # from netutils.config.compliance import section_config
-
+    # for CLI config the subset of the config is really given by netutils
+    # from netutils.config.compliance import section_config
     _actual = get_config_element(rule, backup_cfg, obj, logger) # actually calling section_config()
     _intended = get_config_element(rule, intended_cfg, obj, logger)
 
@@ -112,4 +112,26 @@ class ConfigCompliance(PrimaryModel):  # pylint: disable=too-many-ancestors
    def save(self, *args, **kwargs):
        self.compliance_on_save()
        self.remediation_on_save()
+```
+
+
+```python
+ 
+def compliance_on_save(self):
+     """The actual configuration compliance happens here, but the details for actual compliance job would be found in FUNC_MAPPER."""
+     if self.rule.custom_compliance:
+         if not FUNC_MAPPER.get("custom"):
+             raise ValidationError(
+                 "Custom type provided, but no `get_custom_compliance` config set, please contact system admin."
+             )
+         compliance_details = FUNC_MAPPER["custom"](obj=self) # run_custom_compliance runs here
+         _verify_get_custom_compliance_data(compliance_details)
+     else:
+         compliance_details = FUNC_MAPPER[self.rule.config_type](obj=self)
+
+     self.compliance = compliance_details["compliance"]
+     self.compliance_int = compliance_details["compliance_int"]
+     self.ordered = compliance_details["ordered"]
+     self.missing = compliance_details["missing"]
+     self.extra = compliance_details["extra"]
 ```
