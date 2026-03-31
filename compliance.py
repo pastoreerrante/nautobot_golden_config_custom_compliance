@@ -73,7 +73,10 @@ def _deduplicate_config(config, redundant_line, predicate):
     # deduplication happens here
     removed_config_lines = []
     for config_line in config_lst:
-        if config_line.startswith(redundant_line) and config_line not in removed_config_lines:
+        if (
+            config_line.startswith(redundant_line)
+            and config_line not in removed_config_lines
+        ):
             removed_config_lines.append(config_line)
             config_lst.remove(config_line)
 
@@ -83,7 +86,7 @@ def _deduplicate_config(config, redundant_line, predicate):
     return deduplicated_config
 
 
-def custom_compliance(obj):
+def run_custom_compliance(obj):
     """
     Args:
       obj: The ConfigCompliance instance containing device, rule, actual, and intended configuration data.
@@ -103,16 +106,20 @@ def custom_compliance(obj):
 
     This function is called inside the compliance_on_save() of the ConfigCompliance object.
     """
-    print("called custom_compliance")
+    print("called run_custom_compliance")
     print(f"{obj.actual=}")
     print(f"{obj.intended=}")
 
-    # in theory custom_compliance() fun might be called over multiple Compliance Rules
+    # in theory run_custom_compliance() fun might be called over multiple Compliance Rules
     # but custom compliance logic might be different for each compliance rule.
     # this custom logic must be applied only for the compliance rule called "interfaces"
     if obj.rule.feature.name == "interfaces":
-        actual_config_deduplicated = _deduplicate_config(obj.actual, REDUNDANT_LINE, _is_interface)
-        intended_config_deduplicated = _deduplicate_config(obj.intended, REDUNDANT_LINE, _is_interface)
+        actual_config_deduplicated = _deduplicate_config(
+            obj.actual, REDUNDANT_LINE, _is_interface
+        )
+        intended_config_deduplicated = _deduplicate_config(
+            obj.intended, REDUNDANT_LINE, _is_interface
+        )
         # here we are overriding the original actual and intended configurations with our own
         # version to make hier_config happy
         obj.actual = actual_config_deduplicated
